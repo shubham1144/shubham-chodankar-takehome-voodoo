@@ -50,6 +50,35 @@ describe('GET /api/games', () => {
     });
 });
 
+/**
+ * Testing search all games endpoint
+ */
+ describe('GET /api/games/search', () => {
+    it('respond with json containing no games', async () => {
+        let data = {
+            platform: "",
+            name: "Invalid",
+        }
+        const { body, status } = await request(app)
+            .post('/api/games/search')
+            .set('Accept', 'application/json')
+            .send(data)
+        assert.strictEqual(status, 200);
+        assert.strictEqual(body.length, 0);
+    });
+    it('respond with json containing one games', async () => {
+        let data = {
+            platform: "ios",
+            name: "Test App",
+        }
+        const { body, status } = await request(app)
+            .post('/api/games/search')
+            .set('Accept', 'application/json')
+            .send(data)
+        assert.strictEqual(status, 200);
+        assert.strictEqual(body.length, 1);
+    })
+});
 
 /**
  * Testing update game endpoint
@@ -106,4 +135,3 @@ describe('GET /api/games', () => {
         assert.strictEqual(body.length, 0);
     });
 });
-
