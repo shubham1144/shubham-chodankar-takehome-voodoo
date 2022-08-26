@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const db = require('./models');
 const { Op } = require("sequelize");
+const fetch = require("node-fetch");
 
 const app = express();
 
@@ -73,6 +74,40 @@ app.post('/api/games/search', async (req, res) => {
     console.error('There was an error searching games', err)
     return res.send(err)
   } 
+})
+
+app.post('/api/games/populate', async( req, res) => {
+  try {
+    const S3BucketData = [], gamesData = []
+    const urls = [
+    "https://interview-marketing-eng-dev.s3.eu-west-1.amazonaws.com/android.top100.json", 
+    "https://interview-marketing-eng-dev.s3.eu-west-1.amazonaws.com/ios.top100.json"]
+    for(let url of urls) {
+      const response = await fetch(url);
+      const data = await response.json();
+      S3BucketData.push(...data)
+    }
+    for(let record of S3BucketData) {
+      for(let game of record) {
+        const { publisher_id, name, os, app_id, bundle_id, version} = game
+        let gameRecord = {
+          publisherId:publisher_id,
+          name: name,
+          platform: os,
+          storeId: app_id,
+          bundleId: bundle_id,
+          appVersion: version,
+          isPublished: true,
+        }
+        gamesData.push(gameRecord)
+      }
+    }
+    const games = await db.Game.bulkCreate(gamesData);
+    res.send(games)
+  } catch(err) {
+    console.error('There was a error populating games', err)
+    return res.send(err)
+  }
 })
 
 app.listen(3000, () => {
